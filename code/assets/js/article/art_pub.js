@@ -14,6 +14,7 @@ $(function () {
     var options = {
         aspectRatio: 400 / 280,
         preview: '.img-preview'
+
     }
 
     // 3. 初始化裁剪区域

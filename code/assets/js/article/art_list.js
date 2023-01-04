@@ -12,6 +12,7 @@ $(function () {
     }
     initTable()
     initCate()
+    initEditor()
     // 获取文章列表数据的方法
     function initTable() {
         $.ajax({
@@ -22,7 +23,7 @@ $(function () {
                 if (res.status !== 0) {
                     return layer.msg('获取文章列表失败')
                 }
-                console.log(res);
+                // console.log(res);
                 // 使用模板引擎渲染数据
                 const htmlstr = template('tpl-table', res)
                 // console.log(htmlstr);
@@ -141,4 +142,130 @@ $(function () {
             layer.close(index);
         });
     })
+
+
+
+    // 通过代理的方式，为编辑按钮绑定点击事件
+    $('tbody').on('click', '.btn-edit', function (e) {
+        e.preventDefault()
+        // 初始化富文本编辑器
+
+        const id = $(this).attr('data-id')
+        indexEdit = layer.open({
+            // 指定1，去除确定按钮
+            type: 1,
+            // 指定弹出层的宽高
+            area: ['800px', '100%'],
+            title: '修改文章'
+            , content: $('#dialog-edit').html()
+
+        });
+        initCate()
+        function initCate() {
+            $.ajax({
+                method: 'GET',
+                url: '/my/article/cates',
+                success: function (res) {
+                    if (res.status !== 0)
+                        return layer.msg('获取文章分类失败')
+                    const htmlstr = template('tpl-cates', res)
+                    // console.log(res);
+                    // console.log(htmlstr);
+                    $('#cate_id').html(htmlstr)
+                    form.render()
+                }
+            })
+        }
+        // 初始化富文本编辑器
+        initEditor()
+        // 1. 初始化图片裁剪器
+        var $image = $('#image')
+
+        // 2. 裁剪选项
+        var options = {
+            aspectRatio: 400 / 280,
+            preview: '.img-preview'
+        }
+
+        // 3. 初始化裁剪区域
+        $image.cropper(options)
+
+
+        // 获取文章信息
+        $.ajax({
+            method: 'GET',
+            url: '/my/article/' + id,
+            success: function (res) {
+                if (res.status !== 0)
+                    return layer.msg('获取文章信息失败')
+                // 给表单赋值
+                // console.log(res);
+
+                form.val("form-pub", res.data)
+
+                $('#content').html(res.data.content)
+                $image
+                    .cropper('destroy')      // 销毁旧的裁剪区域
+                    .attr('src', 'http://api-breakingnews-web.itheima.net' + res.data.cover_img)  // 重新设置图片路径
+                    .cropper(options)
+            }
+        })
+        // 修改文章信息
+        // 定义文章的发布状态
+        let art_state = '已发布'
+        $('#btnSave2').on('click', function () {
+            art_state = '草稿'
+        })
+        // 为表单绑定点击事件
+        $('#form-pub').on('submit', function (e) {
+            e.preventDefault()
+            // console.log(11);
+            // 基于for表单快速创建一个for对象
+            const fd = new FormData($(this)[0])
+            // 将文章的发布状态添加到formdata对象中
+            fd.append('state', art_state)
+
+            // 将封面裁剪过后的图片输出为一个对象
+            $image
+                .cropper('getCroppedCanvas', { // 创建一个 Canvas 画布
+                    width: 400,
+                    height: 280
+                })
+                .toBlob(function (blob) {       // 将 Canvas 画布上的内容，转化为文件对象
+                    // 得到文件对象后，进行后续的操作
+                    fd.append('cover_img', blob)
+                    // 发起ajax的数据请求
+                    editArticle(fd)
+                    // console.log(fd);
+                    // fd.forEach(function (k, v) {
+                    //     console.log(k, v);
+                    // })
+                })
+
+        })
+        // 更新文章的方法
+        function editArticle(fd) {
+            $.ajax({
+                method: 'POST',
+                url: '/my/article/edit',
+                data: fd,
+                // 如果想服务器提交的是FormData()格式的数据  需要添加两个配置项
+                contentType: false,
+                processData: false,
+                success: function (res) {
+                    if (res.status !== 0)
+                        return layer.msg('更新文章失败')
+                    layer.msg('更新文章成功')
+                    location.href = '/code/article/art_list.html'
+                }
+            })
+
+        }
+
+
+
+
+
+    })
+
 })

@@ -8,6 +8,7 @@ $(function () {
             success: function (res) {
                 // console.log(res);
                 const htmlStr = template('tpl-table', res)
+                console.log(res);
                 $('tbody').html(htmlStr)
             }
         })
@@ -68,6 +69,7 @@ $(function () {
             success: function (res) {
                 if (res.status !== 0)
                     return layer.msg('获取当前分类信息失败')
+                console.log(res);
                 form.val('form-edit', res.data)
             }
         })
@@ -82,8 +84,10 @@ $(function () {
             url: '/my/article/updatecate',
             data: $(this).serialize(),
             success: function (res) {
+
                 if (res.status !== 0)
                     return layer.msg('修改分类信息失败:' + res.message)
+                console.log(res);
                 initArticleList()
                 layer.msg('修改分类信息成功')
                 layer.close(indexEdit)
